@@ -54,28 +54,38 @@ user_input = st.chat_input("Ihre Frage eingeben:")
 if user_input:
     st.chat_message("user").write(user_input)
 
-    context = get_relevant_chunks(user_input)
-    context_text = "\n".join(context)
+    # Sonderfall: Begrüßung erkennen und sofort antworten
+    if user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
+        welcome_reply = (
+            "Hallo und willkommen bei uns! Wie kann ich für Sie helfen?"
+            " Haben Sie Fragen zum Tarif, zum Angebot oder zur Anmeldung? Ich möchte gern helfen."
+        )
+        st.session_state.chat_history.append((user_input, welcome_reply))
+        st.chat_message("assistant").write(welcome_reply)
+    else:
+        context = get_relevant_chunks(user_input)
+        context_text = "\n".join(context)
 
-    messages = [
-        {
-            "role": "system",
-            "content": (
-                "Du bist ein freundlicher, hilfsbereiter und professioneller Kundenservice-Chatbot "
-                "für eine Versicherung. Antworte empathisch, klar und mit einer positiven Haltung. "
-                "Falls du etwas nicht genau weißt, gib dein Bestes, um hilfreiche Hinweise zu geben."
-            )
-        },
-        {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
-    ]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Du bist ein professioneller, klar formulierender Kundenservice-Chatbot für eine Versicherung."
+                    " Antworte auf Fragen direkt, sachlich und mit hoher Informationsdichte."
+                    " Vermeide übertrieben freundliche Floskeln oder Umwege. Deine Antworten sollen vertrauenswürdig,"
+                    " hilfreich und zielgerichtet sein."
+                )
+            },
+            {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
+        ]
 
-    # Anfrage an das Sprachmodell senden
-    response = client.chat.completions.create(
-        model="mistralai/mistral-7b-instruct:free",
-        messages=messages
-    )
+        # Anfrage an das Sprachmodell senden (OpenAI SDK v1 Format)
+        response = client.chat.completions.create(
+            model="mistralai/mistral-7b-instruct:free",
+            messages=messages
+        )
 
-    # Antwort anzeigen & speichern
-    answer = response.choices[0].message.content
-    st.session_state.chat_history.append((user_input, answer))
-    st.chat_message("assistant").write(answer)
+        # Antwort anzeigen und im Verlauf speichern
+        answer = response.choices[0].message.content
+        st.session_state.chat_history.append((user_input, answer))
+        st.chat_message("assistant").write(answer)
