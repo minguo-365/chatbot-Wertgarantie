@@ -57,8 +57,8 @@ if user_input:
     # Sonderfall: Begrüßung erkennen und sofort antworten
     if user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
-            "Hallo und willkommen bei uns! Wie kann ich für Sie helfen?"
-            " Haben Sie Fragen zum Tarif, zum Angebot oder zur Anmeldung? Ich möchte gern helfen."
+            "Hallo und willkommen bei uns! Wie kann ich für Sie helfen? "
+            "Haben Sie Fragen zum Tarif, zum Angebot oder zur Anmeldung? Ich möchte gern helfen."
         )
         st.session_state.chat_history.append((user_input, welcome_reply))
         st.chat_message("assistant").write(welcome_reply)
@@ -70,22 +70,22 @@ if user_input:
             {
                 "role": "system",
                 "content": (
-                    "Du bist ein professioneller, klar formulierender Kundenservice-Chatbot für eine Versicherung."
-                    " Antworte auf Fragen direkt, sachlich und mit hoher Informationsdichte."
-                    " Vermeide übertrieben freundliche Floskeln oder Umwege. Deine Antworten sollen vertrauenswürdig,"
-                    " hilfreich und zielgerichtet sein."
+                    "Du bist ein professioneller Kundenservice-Chatbot für eine deutsche Versicherung. "
+                    "Antworte ausschließlich auf Deutsch, fehlerfrei und sachlich korrekt. "
+                    "Achte besonders auf Grammatik, Rechtschreibung und technische Fachbegriffe. "
+                    "Deine Antworten sollen kurz, präzise und vertrauenswürdig sein."
                 )
             },
             {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
         ]
 
-        # Anfrage an das Sprachmodell senden (OpenAI SDK v1 Format)
+        # Anfrage an das Sprachmodell senden
         response = client.chat.completions.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=messages
         )
 
-        # Antwort anzeigen und im Verlauf speichern
+        # Antwort anzeigen und speichern
         answer = response.choices[0].message.content
         st.session_state.chat_history.append((user_input, answer))
         st.chat_message("assistant").write(answer)
