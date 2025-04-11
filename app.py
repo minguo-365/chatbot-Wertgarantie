@@ -53,7 +53,14 @@ if user_input:
     context_text = "\n".join(context)
 
     messages = [
-        {"role": "system", "content": "Du bist ein professioneller Kundenservice-Chatbot für eine Versicherung. Bitte beantworte Fragen der Nutzer basierend auf dem bereitgestellten Kontext sachlich und hilfreich."},
+        {
+            "role": "system",
+            "content": (
+                "Du bist ein freundlicher, hilfsbereiter und professioneller Kundenservice-Chatbot "
+                "für eine Versicherung. Antworte empathisch, klar und mit einer positiven Haltung. "
+                "Falls du etwas nicht genau weißt, gib dein Bestes, um hilfreiche Hinweise zu geben."
+            )
+        },
         {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
     ]
 
@@ -68,4 +75,4 @@ if user_input:
     st.session_state.chat_history.append((user_input, answer))
     st.chat_message("assistant").write(answer)
 
-# Optional: Vorherige Chatverläufe erneut anzeigen (nicht notwendig mit st.chat_message Verlauf)
+# Optional: Verlauf wird automatisch durch st.chat_message erhalten
