@@ -42,6 +42,11 @@ st.title("🤖 Willkommen")
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# Chatverlauf anzeigen
+for user_msg, bot_msg in st.session_state.chat_history:
+    st.chat_message("user").write(user_msg)
+    st.chat_message("assistant").write(bot_msg)
+
 # Benutzereingabe-Feld
 user_input = st.chat_input("Ihre Frage eingeben:")
 
@@ -64,15 +69,13 @@ if user_input:
         {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
     ]
 
-    # Anfrage an das Sprachmodell senden (OpenAI SDK v1 Format)
+    # Anfrage an das Sprachmodell senden
     response = client.chat.completions.create(
         model="mistralai/mistral-7b-instruct:free",
         messages=messages
     )
 
-    # Antwort anzeigen und im Verlauf speichern
+    # Antwort anzeigen & speichern
     answer = response.choices[0].message.content
     st.session_state.chat_history.append((user_input, answer))
     st.chat_message("assistant").write(answer)
-
-# Optional: Verlauf wird automatisch durch st.chat_message erhalten
