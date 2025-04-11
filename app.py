@@ -4,12 +4,11 @@ st.set_page_config(page_title="Wertgarantie Chatbot", layout="wide")
 import os
 import faiss
 import numpy as np
-import openai
+from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 
 # OpenRouter API-Schlüssel und Basis-URL setzen (in secrets.toml definiert)
-openai.api_key = st.secrets["OPENROUTER_API_KEY"]
-openai.api_base = "https://openrouter.ai/api/v1"
+client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
 # ---------------------------
 # 1. Initialisierung des Vektor-Speichers für Dokumente
@@ -58,14 +57,14 @@ if user_input:
         {"role": "user", "content": f"Relevante Informationen:\n{context_text}\n\nFrage: {user_input}"}
     ]
 
-    # Anfrage an das Sprachmodell senden
-    response = openai.ChatCompletion.create(
+    # Anfrage an das Sprachmodell senden (OpenAI SDK v1 Format)
+    response = client.chat.completions.create(
         model="nvidia/llama-3.1-nemotron-nano-8b-v1:free",
         messages=messages
     )
 
     # Antwort anzeigen und im Verlauf speichern
-    answer = response.choices[0].message["content"]
+    answer = response.choices[0].message.content
     st.session_state.chat_history.append((user_input, answer))
     st.markdown(f"**🤖 Antwort:** {answer}")
 
