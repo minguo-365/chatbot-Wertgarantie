@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Wertgarantie Chatbot", layout="wide")
+st.set_page_config(page_title="🤖 Willkommen", layout="wide")
 
 import os
 import faiss
@@ -36,19 +36,19 @@ def get_relevant_chunks(query, k=3):
 # ---------------------------
 # 2. Benutzeroberfläche & Chat-Logik
 # ---------------------------
-st.title("📍 Wertgarantie Kundenservice-Chatbot")
-
-st.markdown("Geben Sie unten Ihre Frage ein. Ich helfe Ihnen gerne bei Fragen zu Versicherungsbedingungen, Reparaturprozessen usw.")
+st.title("🤖 Willkommen")
 
 # Initialisierung des Chatverlaufs
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # Benutzereingabe-Feld
-user_input = st.text_input("✉️ Ihre Frage eingeben:")
+user_input = st.chat_input("Ihre Frage eingeben:")
 
 # Verarbeitung der Benutzereingabe
 if user_input:
+    st.chat_message("user").write(user_input)
+
     context = get_relevant_chunks(user_input)
     context_text = "\n".join(context)
 
@@ -66,10 +66,6 @@ if user_input:
     # Antwort anzeigen und im Verlauf speichern
     answer = response.choices[0].message.content
     st.session_state.chat_history.append((user_input, answer))
-    st.markdown(f"**🤖 Antwort:** {answer}")
+    st.chat_message("assistant").write(answer)
 
-# Anzeige des bisherigen Chatverlaufs
-if st.session_state.chat_history:
-    with st.expander("📜 Chatverlauf anzeigen"):
-        for q, a in st.session_state.chat_history:
-            st.markdown(f"- **Sie:** {q}\n- **Bot:** {a}")
+# Optional: Vorherige Chatverläufe erneut anzeigen (nicht notwendig mit st.chat_message Verlauf)
