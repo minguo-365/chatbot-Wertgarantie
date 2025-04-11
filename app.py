@@ -4,8 +4,12 @@ st.set_page_config(page_title="Wertgarantie Chatbot", layout="wide")
 import os
 import faiss
 import numpy as np
-from openai import OpenAI
+import openai
 from sentence_transformers import SentenceTransformer
+
+# 设置 OpenRouter API Key 和地址（确保你在 secrets.toml 中配置）
+openai.api_key = st.secrets["OPENROUTER_API_KEY"]
+openai.api_base = "https://openrouter.ai/api/v1"
 
 # ---------------------------
 # 1. 文档向量初始化
@@ -29,75 +33,36 @@ def get_relevant_chunks(query, k=3):
     return [chunks[i] for i in I[0]]
 
 # ---------------------------
-# 2. 页面样式
+# 2. 页面样式 & 聊天逻辑
 # ---------------------------
-st.image("https://raw.githubusercontent.com/你的用户名/你的仓库名/main/wertgarantie_logo.png", width=160)
-st.markdown("""
-<div style='text-align: center; margin-top: -30px;'>
-    <h1>🤖 Willkommen</h1>
-</div>
-""", unsafe_allow_html=True)
+st.title("📍 Wertgarantie 客服机器人")
 
-st.markdown("""
-<style>
-    .stTextInput > div > div > input {
-        border-radius: 10px;
-        font-size: 18px;
-        padding: 10px;
-    }
-    .stMarkdown {
-        font-size: 17px;
-        line-height: 1.6;
-    }
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 2rem;
-    }
-</style>
-""", unsafe_allow_html=True)
+st.markdown("在下方输入您的问题，我将为您提供关于保险条款、维修流程等内容的智能回复。")
 
-# ---------------------------
-# 3. 初始化 OpenAI & 聊天记录
-# ---------------------------
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "你是一个专业客服助手，可以结合公司提供的文档来回答客户的问题。"}
-    ]
-
-for msg in st.session_state.messages:
-    if msg["role"] != "system":
-        st.chat_message(msg["role"]).markdown(msg["content"])
-
-# ---------------------------
-# 4. 用户输入 & 回答生成
-# ---------------------------
-user_input = st.chat_input("Bitte geben Sie Ihre Frage ein")
+user_input = st.text_input("✉️ 请输入您的问题：")
 
 if user_input:
-    st.chat_message("user").markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    context = get_relevant_chunks(user_input)
+    context_text = "\n".join(context)
 
-    try:
-        context_chunks = get_relevant_chunks(user_input)
-        context = "\n\n".join(context_chunks)
-        prompt = f"""
-Nutze die folgenden Informationen, um die Frage möglichst genau zu beantworten.
+    messages = [
+        {"role": "system", "content": "你是一个专业的保险客服机器人，请根据用户问题结合上下文准确作答。"},
+        {"role": "user", "content": f"以下是相关参考信息：\n{context_text}\n\n用户问题：{user_input}"}
+    ]
 
-Context:
-{context}
+    response = openai.ChatCompletion.create(
+        model="nvidia/llama-3.1-nemotron-nano-8b-v1:free",
+        messages=messages
+    )
 
-Frage:
-{user_input}
-"""
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=st.session_state.messages
-        )
-        reply = response.choices[0].message.content
-        st.chat_message("assistant").markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
-    except Exception as e:
-        st.error(f"Fehler beim Antworten: {e}")
+    answer = response.choices[0].message["content"]
+    st.session_state.chat_history.append((user_input, answer))
+    st.markdown(f"**🤖 答复：** {answer}")
+
+if st.session_state.chat_history:
+    with st.expander("📜 查看历史对话"):
+        for q, a in st.session_state.chat_history:
+            st.markdown(f"- **你：** {q}\n- **AI：** {a}")
