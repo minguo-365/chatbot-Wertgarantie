@@ -59,7 +59,7 @@ if user_input:
 
     # Anfrage an das Sprachmodell senden (OpenAI SDK v1 Format)
     response = client.chat.completions.create(
-        model="nvidia/llama-3.1-nemotron-nano-8b-v1:free",
+        model="mistralai/mistral-7b-instruct:free",
         messages=messages
     )
 
