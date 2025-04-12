@@ -1,8 +1,8 @@
 # 🤖 Wertgarantie Chatbot
 
-一个基于 GPT + 文档问答的智能客服机器人，支持 WERTGARANTIE 客户通过自然语言获取保险和服务信息。
+Ein intelligenter Kundenservice-Chatbot auf Basis von GPT + Dokumenten-RAG, der WERTGARANTIE-Kunden ermöglicht, Versicherungs- und Serviceinformationen in natürlicher Sprache zu erhalten.
 
-## 项目结构
+##Projektstruktur
 
 ```
 wertgarantie-chatbot/
@@ -12,13 +12,12 @@ wertgarantie-chatbot/
 └── README.md
 ```
 
-## 在线部署指南
+## Anleitung zur Online-Bereitstellung
+1.Dieses Projekt auf GitHub hochladen
+2.Streamlit Cloud öffnen und eine neue App erstellen
+3.Umgebungsvariable setzen: OPENAI_API_KEY=Ihr_OpenAI_Schlüssel
 
-1. 上传此项目到 GitHub
-2. 使用 [Streamlit Cloud](https://streamlit.io/cloud) 创建新应用
-3. 设置环境变量：`OPENAI_API_KEY=你的OpenAI密钥`
-
-## 本地运行方式
+## Lokaler Start
 
 ```bash
 pip install -r requirements.txt
