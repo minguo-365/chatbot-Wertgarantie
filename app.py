@@ -69,7 +69,6 @@ if user_input:
     else:
         context = get_relevant_chunks(user_input)
         context_text = "\n".join([c[0] for c in context])
-        context_source = "\n".join([f"Quelle {i+1}: Abschnitt #{cid}" for i, (_, cid) in enumerate(context)])
 
         # Multiround context from previous exchanges
         conversation_history = []
@@ -99,7 +98,7 @@ if user_input:
             messages=messages
         )
 
-    
+        answer = response.choices[0].message.content
 
-        st.session_state.chat_history.append((user_input, final_answer))
-        st.chat_message("assistant").write(final_answer)
+        st.session_state.chat_history.append((user_input, answer))
+        st.chat_message("assistant").write(answer)
