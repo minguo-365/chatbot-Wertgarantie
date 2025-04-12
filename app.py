@@ -99,8 +99,7 @@ if user_input:
             messages=messages
         )
 
-        answer = response.choices[0].message.content
-        final_answer = answer + f"\n\n📎 Quellen:\n{context_source}"
+    
 
         st.session_state.chat_history.append((user_input, final_answer))
         st.chat_message("assistant").write(final_answer)
