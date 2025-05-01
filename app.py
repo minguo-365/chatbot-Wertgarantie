@@ -1,6 +1,7 @@
 import streamlit as st
-st.set_page_config(page_title="🤖 Willkommen", layout="wide")
-
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 import os
 import faiss
 import numpy as np
@@ -32,6 +33,24 @@ def get_relevant_chunks(query, k=3):
     query_vec = model.encode([query])
     D, I = index.search(np.array(query_vec), k)
     return [(chunks[i], i) for i in I[0]]
+# -------- Modelltraining (kann später ausgelagert werden) --------
+@st.cache_data
+def train_model():
+    data = pd.DataFrame({
+        'Alter': [25, 45, 30, 60, 35, 22, 50],
+        'Geraetewert': [800, 500, 1200, 400, 1000, 950, 350],
+        'Marke': ['Apple', 'Samsung', 'Apple', 'Andere', 'Apple', 'Samsung', 'Andere'],
+        'Schadenhistorie': [0, 1, 0, 1, 0, 1, 0],
+        'Schadenhoehe': [0, 150, 0, 300, 0, 100, 0]
+    })
+    data = pd.get_dummies(data, columns=['Marke'], drop_first=True)
+    formula = 'Schadenhoehe ~ Alter + Geraetewert + Schadenhistorie + Marke_Apple + Marke_Samsung'
+    tweedie = sm.families.Tweedie(var_power=1.5, link=sm.families.links.log())
+    model = smf.glm(formula=formula, data=data, family=tweedie).fit()
+    return model
+
+model = train_model()
+    
 
 # ---------------------------
 # 2. Benutzeroberfläche & Chat-Logik
@@ -58,7 +77,34 @@ user_input = st.chat_input("Ihre Frage eingeben:")
 # Verarbeitung der Benutzereingabe
 if user_input:
     st.chat_message("user").write(user_input)
+    if user_input.strip().lower() == "Handyversicherung":
 
+    st.subheader("📱 Bitte geben Sie Ihre Gerätedaten ein:")
+
+    alter = st.number_input("Wie alt sind Sie?", min_value=16, max_value=100, value=30)
+    geraetewert = st.number_input("Wie viel kostet Ihr Handy? (€)", min_value=50, max_value=2000, value=900)
+    marke = st.selectbox("Welche Marke ist Ihr Handy?", ['Apple', 'Samsung', 'Andere'])
+    schadenhistorie = st.radio("Gab es im letzten Jahr einen Schaden?", ['Nein', 'Ja'])
+    schadenhistorie_code = 1 if schadenhistorie == 'Ja' else 0
+
+    if st.button("📊 Tarif berechnen"):
+        # Eingabedaten als DataFrame
+        daten = pd.DataFrame([{
+            'Alter': alter,
+            'Geraetewert': geraetewert,
+            'Schadenhistorie': schadenhistorie_code,
+            'Marke_Apple': 1 if marke == 'Apple' else 0,
+            'Marke_Samsung': 1 if marke == 'Samsung' else 0
+        }])
+
+        # Modellvorhersage
+        erwartete_schadenhoehe = model.predict(daten)[0]
+        tarif_monatlich = (erwartete_schadenhoehe * 1.3) / 12
+
+        st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
+    else:
+    st.info("💡 Bitte geben Sie **HandyVersicherung** ein, um die Tarifberechnung zu starten.")
+    
     # Sonderfall: Begrüßung erkennen und sofort antworten
     if user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
