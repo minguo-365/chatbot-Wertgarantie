@@ -90,7 +90,7 @@ for user_msg, bot_msg in st.session_state.chat_history:
     st.chat_message("user").write(user_msg)
     st.chat_message("assistant").write(bot_msg)
 
-user_input = st.chat_input("Stellen Sie Ihre Frage oder geben Sie 'Handyversicherung' ein...")
+user_input = st.chat_input("Ihre Frage eingeben")
 
 if user_input:
     st.chat_message("user").write(user_input)
