@@ -83,10 +83,7 @@ if user_input:
 
         # Schritt 1: Alter (Textfeld mit Validierung)
         if st.session_state.frage_schritt == 1:
-            if "alter_input" not in st.session_state:
-                st.session_state.alter_input = ""
-
-            st.session_state.alter_input = st.text_input("1️⃣ Wie alt sind Sie?", value=st.session_state.alter_input, key="alter_input")
+            st.text_input("1️⃣ Wie alt sind Sie?", key="alter_input")
             alter_str = st.session_state.alter_input
 
             if alter_str.isdigit():
@@ -103,10 +100,7 @@ if user_input:
 
         # Schritt 2: Gerätewert (Textfeld mit Validierung)
         elif st.session_state.frage_schritt == 2:
-            if "wert_input" not in st.session_state:
-                st.session_state.wert_input = ""
-
-            st.session_state.wert_input = st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)", value=st.session_state.wert_input, key="wert_input")
+            st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)", key="wert_input")
             geraetewert_str = st.session_state.wert_input
 
             if geraetewert_str.isdigit():
@@ -123,10 +117,7 @@ if user_input:
 
         # Schritt 3: Marke (Textfeld mit Validierung)
         elif st.session_state.frage_schritt == 3:
-            if "marke_input" not in st.session_state:
-                st.session_state.marke_input = ""
-
-            st.session_state.marke_input = st.text_input("3️⃣ Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)", value=st.session_state.marke_input, key="marke_input")
+            st.text_input("3️⃣ Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)", key="marke_input")
             marke = st.session_state.marke_input.strip().capitalize()
             if marke in ["Apple", "Samsung", "Andere"]:
                 if st.button("Weiter ➔", key="weiter3"):
@@ -138,10 +129,7 @@ if user_input:
 
         # Schritt 4: Schadenhistorie (Textfeld mit Ja/Nein)
         elif st.session_state.frage_schritt == 4:
-            if "schaden_input" not in st.session_state:
-                st.session_state.schaden_input = ""
-
-            st.session_state.schaden_input = st.text_input("4️⃣ Gab es im letzten Jahr einen Schaden? (Ja/Nein)", value=st.session_state.schaden_input, key="schaden_input")
+            st.text_input("4️⃣ Gab es im letzten Jahr einen Schaden? (Ja/Nein)", key="schaden_input")
             schadenhistorie = st.session_state.schaden_input.strip().capitalize()
             if schadenhistorie in ["Ja", "Nein"]:
                 if st.button("📊 Tarif berechnen", key="weiter4"):
@@ -173,7 +161,7 @@ if user_input:
     elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
             "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-            "Sie können z. B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+            "Sie können z.​B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
         )
         st.chat_message("assistant").write(welcome_reply)
         st.session_state.chat_history.append((user_input, welcome_reply))
