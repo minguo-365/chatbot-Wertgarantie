@@ -11,7 +11,7 @@ from sentence_transformers import SentenceTransformer
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
 # ---------------------------
-# 1. Initialisierung des Vektor-Speichers für Dokumente
+# 1. Initialisierung des Vektor-Speichers
 # ---------------------------
 @st.cache_resource
 def init_vector_store():
@@ -32,7 +32,7 @@ def get_relevant_chunks(query, k=3):
     return [(chunks[i], i) for i in I[0]]
 
 # ---------------------------
-# 2. GLM-Modell für Tarifberechnung trainieren
+# 2. GLM-Modell für Tarifberechnung
 # ---------------------------
 @st.cache_data
 def train_glm_model():
@@ -52,7 +52,7 @@ def train_glm_model():
 glm_model = train_glm_model()
 
 # ---------------------------
-# 3. Benutzeroberfläche & Chat-Logik
+# 3. Streamlit-Oberfläche
 # ---------------------------
 st.title("🧑‍💻 Wertgarantie Chatbot")
 
@@ -65,22 +65,24 @@ if "chat_history" not in st.session_state:
 if "frage_schritt" not in st.session_state:
     st.session_state.frage_schritt = 0
 
+# Chatverlauf anzeigen
 for user_msg, bot_msg in st.session_state.chat_history:
     st.chat_message("user").write(user_msg)
     st.chat_message("assistant").write(bot_msg)
 
+# Eingabe-Feld
 user_input = st.chat_input("Stellen Sie Ihre Frage oder geben Sie 'Handyversicherung' ein...")
 
 if user_input:
     st.chat_message("user").write(user_input)
 
     if user_input.strip().lower() == "handyversicherung":
-        st.session_state.frage_schritt += 1
+        st.session_state.frage_schritt = 1
 
     elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
             "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-            "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+            "Sie können z. B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
         )
         st.chat_message("assistant").write(welcome_reply)
         st.session_state.chat_history.append((user_input, welcome_reply))
@@ -114,6 +116,9 @@ if user_input:
         st.chat_message("assistant").write(answer)
         st.session_state.chat_history.append((user_input, answer))
 
+# ---------------------------
+# 4. Formularbasierte Tarifabfrage
+# ---------------------------
 if st.session_state.frage_schritt > 0:
     st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
 
