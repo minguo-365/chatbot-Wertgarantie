@@ -1,3 +1,5 @@
+# file: app.py
+
 import streamlit as st
 import pandas as pd
 import os
@@ -8,7 +10,6 @@ from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 import re
 import requests
-
 
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
@@ -29,6 +30,7 @@ def get_relevante_abschnitte(anfrage, k=3):
     anfrage_vektor = model.encode([anfrage])
     D, I = index.search(np.array(anfrage_vektor), k)
     return [(chunks[i], i) for i in I[0]]
+
 def frage_openrouter(nachrichten):
     try:
         response = client.chat.completions.create(
@@ -45,13 +47,10 @@ def frage_openrouter(nachrichten):
                 )
                 return response.choices[0].message.content
             except Exception as e2:
-                return f"❌ Auch das kostenlose Modell schlug fehl: {e2}"
+                return f"\u274c Auch das kostenlose Modell schlug fehl: {e2}"
         else:
-            return f"❌ OpenRouter Fehler: {e}"
+            return f"\u274c OpenRouter Fehler: {e}"
 
-# ---------------------------
-#  GLM-Modell für Tarifberechnung trainieren
-# ---------------------------
 @st.cache_data
 def train_glm_model():
     df = pd.DataFrame({
@@ -63,31 +62,28 @@ def train_glm_model():
     })
     df = pd.get_dummies(df, columns=['Marke'], drop_first=True)
     formula = 'Schadenhoehe ~ Alter + Geraetewert + Schadenhistorie + Marke_Apple + Marke_Samsung'
-    tweedie = sm.families.Tweedie(var_power=1.5, link=sm.families.links.log())
+    tweedie = smf.families.Tweedie(var_power=1.5, link=smf.families.links.log())
     glm_model = smf.glm(formula=formula, data=df, family=tweedie).fit()
     return glm_model
 
 glm_model = train_glm_model()
 
-# ---------------------------
-# Benutzeroberfläche & Chat-Logik
-# ---------------------------
 st.title("🧑‍💻 Wertgarantie Chatbot")
 
 if st.button("🗑️ Verlauf löschen"):
     st.session_state.clear()
     st.rerun()
 
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-# Initialisiere Sub-Button-SessionStates
-link_keys = ["show_link_smartphone", 
-             "show_link_notebook", 
-             "show_link_kamera", 
-             "show_link_tv",
-             "show_link_werkstatt",
-             "show_link_haendler",
-             "show_link_ersteHilfe",
-             "show_link_haushaltSelbstreparatur"]
+if "frage_schritt" not in st.session_state:
+    st.session_state.frage_schritt = 0
+
+link_keys = [
+    "show_link_smartphone", "show_link_notebook", "show_link_kamera", "show_link_tv",
+    "show_link_werkstatt", "show_link_haendler", "show_link_ersteHilfe", "show_link_haushaltSelbstreparatur"
+]
 for key in link_keys:
     if key not in st.session_state:
         st.session_state[key] = False
@@ -158,7 +154,6 @@ if user_input:
         antwort = frage_openrouter(nachrichten)
         st.session_state.chat_history.append((user_input, antwort))
         chat_bubble(antwort, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
-
 
 if st.session_state.frage_schritt > 0:
     st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
