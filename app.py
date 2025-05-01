@@ -130,6 +130,7 @@ if user_input:
     elif eingabe in ["hallo", "hi", "guten tag", "hey"]:
         willkommen = "Hallo und willkommen bei Wertgarantie! Was kann ich für Sie tun?"
         st.session_state.chat_history.append((user_input, willkommen))
+        chat_bubble(user_input, align="right", bgcolor="#DCF8C6", avatar_url=USER_AVATAR)
         chat_bubble(willkommen, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
 
     else:
