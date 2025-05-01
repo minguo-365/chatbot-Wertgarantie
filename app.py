@@ -82,21 +82,35 @@ if user_input:
         if "frage_schritt" not in st.session_state:
             st.session_state.frage_schritt = 1
 
-        # Schritt 1: Alter
+        # Schritt 1: Alter (Textfeld statt NumberInput)
         if st.session_state.frage_schritt == 1:
-            alter = st.number_input("1️⃣ Wie alt sind Sie?", min_value=16, max_value=100, key="alter_input")
-            if st.button("Weiter ➔", key="weiter1"):
-                st.session_state.alter = alter
-                st.session_state.frage_schritt = 2
-                st.rerun()
+            alter_str = st.text_input("1️⃣ Wie alt sind Sie?", key="alter_input")
+            if alter_str.isdigit():
+                alter = int(alter_str)
+                if 16 <= alter <= 100:
+                    if st.button("Weiter ➔", key="weiter1"):
+                        st.session_state.alter = alter
+                        st.session_state.frage_schritt = 2
+                        st.rerun()
+                else:
+                    st.warning("Bitte geben Sie ein Alter zwischen 16 und 100 ein.")
+            elif alter_str:
+                st.warning("Bitte geben Sie eine gültige Zahl ein.")
 
-        # Schritt 2: Gerätewert
+        # Schritt 2: Gerätewert (auch als Textfeld)
         elif st.session_state.frage_schritt == 2:
-            geraetewert = st.number_input("2️⃣ Wie viel kostet Ihr Handy? (€)", min_value=50, max_value=2000, key="wert_input")
-            if st.button("Weiter ➔", key="weiter2"):
-                st.session_state.geraetewert = geraetewert
-                st.session_state.frage_schritt = 3
-                st.rerun()
+            geraetewert_str = st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)", key="wert_input")
+            if geraetewert_str.isdigit():
+                geraetewert = int(geraetewert_str)
+                if 50 <= geraetewert <= 2000:
+                    if st.button("Weiter ➔", key="weiter2"):
+                        st.session_state.geraetewert = geraetewert
+                        st.session_state.frage_schritt = 3
+                        st.rerun()
+                else:
+                    st.warning("Bitte geben Sie einen Gerätewert zwischen 50 und 2000 € ein.")
+            elif geraetewert_str:
+                st.warning("Bitte geben Sie einen gültigen Zahlenwert ein.")
 
         # Schritt 3: Marke
         elif st.session_state.frage_schritt == 3:
