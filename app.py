@@ -127,7 +127,7 @@ if user_input:
     if eingabe == "handyversicherung":
         st.session_state.frage_schritt += 1
 
-  elif eingabe in ["hallo", "hi", "guten tag", "hey"]:
+   elif eingabe in ["hallo", "hi", "guten tag", "hey"]:
     willkommen = "Hallo und willkommen bei Wertgarantie! Was kann ich für Sie tun?"
     st.session_state.chat_history.append((user_input, willkommen))
     chat_bubble(willkommen, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
