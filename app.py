@@ -1,38 +1,56 @@
 import streamlit as st
 import pandas as pd
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
+import os
 import faiss
 import numpy as np
+import statsmodels.formula.api as smf
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
+import re
+import requests
 
-# OpenRouter API-Key aus secrets laden
+
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
-# ---------------------------
-# 1. Initialisierung des Vektor-Speichers
-# ---------------------------
 @st.cache_resource
 def init_vector_store():
     with open("wertgarantie.txt", "r", encoding="utf-8") as f:
         text = f.read()
     chunks = [chunk.strip() for chunk in text.split("\n\n") if len(chunk.strip()) > 50]
-    embedder = SentenceTransformer("all-MiniLM-L6-v2")
-    embeddings = embedder.encode(chunks, show_progress_bar=True)
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    embeddings = model.encode(chunks, show_progress_bar=True)
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(np.array(embeddings))
-    return embedder, chunks, index, embeddings
+    return model, chunks, index, embeddings
 
-embedder, chunks, index, _ = init_vector_store()
+model, chunks, index, _ = init_vector_store()
 
-def get_relevant_chunks(query, k=3):
-    query_vec = embedder.encode([query])
-    D, I = index.search(np.array(query_vec), k)
+def get_relevante_abschnitte(anfrage, k=3):
+    anfrage_vektor = model.encode([anfrage])
+    D, I = index.search(np.array(anfrage_vektor), k)
     return [(chunks[i], i) for i in I[0]]
+def frage_openrouter(nachrichten):
+    try:
+        response = client.chat.completions.create(
+            model="mistralai/mistral-7b-instruct",
+            messages=nachrichten
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        if "code': 402" in str(e).lower() or "insuffizien" in str(e).lower():
+            try:
+                response = client.chat.completions.create(
+                    model="mistralai/mistral-7b-instruct:free",
+                    messages=nachrichten
+                )
+                return response.choices[0].message.content
+            except Exception as e2:
+                return f"❌ Auch das kostenlose Modell schlug fehl: {e2}"
+        else:
+            return f"❌ OpenRouter Fehler: {e}"
 
 # ---------------------------
-# 2. GLM-Modell für Tarifberechnung
+#  GLM-Modell für Tarifberechnung trainieren
 # ---------------------------
 @st.cache_data
 def train_glm_model():
@@ -52,7 +70,7 @@ def train_glm_model():
 glm_model = train_glm_model()
 
 # ---------------------------
-# 3. Streamlit-Oberfläche
+# Benutzeroberfläche & Chat-Logik
 # ---------------------------
 st.title("🧑‍💻 Wertgarantie Chatbot")
 
@@ -62,27 +80,28 @@ if st.button("🗑️ Verlauf löschen"):
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 if "frage_schritt" not in st.session_state:
     st.session_state.frage_schritt = 0
 
-# Chatverlauf anzeigen
 for user_msg, bot_msg in st.session_state.chat_history:
     st.chat_message("user").write(user_msg)
     st.chat_message("assistant").write(bot_msg)
 
-# Eingabe-Feld
 user_input = st.chat_input("Stellen Sie Ihre Frage oder geben Sie 'Handyversicherung' ein...")
 
 if user_input:
     st.chat_message("user").write(user_input)
 
     if user_input.strip().lower() == "handyversicherung":
-        st.session_state.frage_schritt = 1
+        st.session_state.frage_schritt += 1
 
     elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
             "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-            "Sie können z. B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+            "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
         )
         st.chat_message("assistant").write(welcome_reply)
         st.session_state.chat_history.append((user_input, welcome_reply))
@@ -116,9 +135,6 @@ if user_input:
         st.chat_message("assistant").write(answer)
         st.session_state.chat_history.append((user_input, answer))
 
-# ---------------------------
-# 4. Formularbasierte Tarifabfrage
-# ---------------------------
 if st.session_state.frage_schritt > 0:
     st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
 
@@ -181,3 +197,193 @@ if st.session_state.frage_schritt > 0:
             for key in ["frage_schritt", "alter", "geraetewert", "marke", "schadenhistorie"]:
                 st.session_state.pop(key, None)
             st.rerun()
+
+
+# Initialisiere Sub-Button-SessionStates
+link_keys = ["show_link_smartphone", 
+             "show_link_notebook", 
+             "show_link_kamera", 
+             "show_link_tv",
+             "show_link_werkstatt",
+             "show_link_haendler",
+             "show_link_ersteHilfe",
+             "show_link_haushaltSelbstreparatur"]
+for key in link_keys:
+    if key not in st.session_state:
+        st.session_state[key] = False
+
+if "show_sub_buttons" not in st.session_state:
+    st.session_state.show_sub_buttons = False
+
+USER_AVATAR = "https://avatars.githubusercontent.com/u/583231?v=4"
+BOT_AVATAR = "https://img.icons8.com/emoji/48/robot-emoji.png"
+
+def chat_bubble(inhalt, align="left", bgcolor="#F1F0F0", avatar_url=None):
+    if inhalt is None:
+        return
+    align_css = "right" if align == "right" else "left"
+    avatar_html = f"<img src='{avatar_url}' style='width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;' />" if avatar_url else ""
+    bubble_html = f"""
+        <div style='text-align: {align_css}; margin: 10px 0; display: flex; flex-direction: {'row-reverse' if align=='right' else 'row'};'>
+            {avatar_html}
+            <div style='background-color: {bgcolor}; padding: 10px 15px; border-radius: 10px; max-width: 80%;'>
+                {inhalt}
+            </div>
+        </div>
+    """
+    st.markdown(bubble_html, unsafe_allow_html=True)
+
+def link_mit_chat_und_link(bot_text, url, key):
+    st.session_state[key] = not st.session_state[key]
+    if st.session_state[key]:
+        link = f'<a href="{url}" target="_blank">🔍 Hier klicken, um zur Seite zu gelangen</a>'
+        chat_bubble(link, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
+
+for nutzer, bot in st.session_state.chat_history:
+    chat_bubble(nutzer, align="right", bgcolor="#DCF8C6", avatar_url=USER_AVATAR)
+    chat_bubble(bot, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
+
+benutzereingabe = st.chat_input("Ihre Frage eingeben:")
+if benutzereingabe:
+    chat_bubble(benutzereingabe, align="right", bgcolor="#DCF8C6", avatar_url=USER_AVATAR)
+    eingabe = benutzereingabe.strip().lower()
+
+    if eingabe in ["hallo", "hi", "guten tag", "hey"]:
+        willkommen = "Hallo und willkommen bei Wertgarantie! Was kann ich für Sie tun?"
+        st.session_state.chat_history.append((benutzereingabe, willkommen))
+        chat_bubble(willkommen, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
+
+    else:
+        verlauf = []
+        for frage, antwort in st.session_state.chat_history[-6:]:
+            if frage: verlauf.append({"role": "user", "content": frage})
+            verlauf.append({"role": "assistant", "content": antwort})
+
+        nachrichten = [
+            {"role": "system", "content": 
+                """
+# Kernidentität
+Sie sind "Emma" - der sympathische Digitalassistent von Wertgarantie mit:
+- 10 Jahren Erfahrung in Versicherungen
+- Fachliche Expertise + herzliche Art
+- Natürliche, aber professionelle Sprache
+
+
+# Antwortregeln (ALLES durchgehend anwenden)
+1. **Sprachliche Präzision**:
+   - Grammatik/Rechtschreibung: Immer fehlerfreies Hochdeutsch
+   - Satzbau: Klare Haupt-Nebensatz-Struktur (max. 15 Wörter/Satz)
+   - Terminologie: Nutzen Sie nur den offiziellen Geräte-Wortschatz von Wertgarantie
+     - Beispiel: "Flusensieb (nicht 'Siebteil')", "Trommellager (nicht 'Drehmechanismus')"
+
+2. **Service-Tonality**:
+   - 3-Stufen-Interaktion:
+     1. Empathie: "Ich verstehe, dass das frustrierend sein muss..."
+     2. Lösung: "Konkret empfehle ich drei Schritte:"
+     3. Aktion: "Kann ich für Sie... veranlassen?"
+   - Absolut vermeiden: 
+     ❌ Umgangssprache ("Hey", "nö")  
+     ❌ Unsichere Formulierungen ("glaube", "vielleicht")
+3.**Strikte Output-Regeln**:
+     1. Niemals Platzhalter wie ___ oder [...] verwenden
+     2. Bei technischen Begriffen immer vollständige Form:
+     - ❌ "Integriertheit von ___"
+     - ✅ "Integrität der Waschmaschinenaufhängung"
+     3. Unklare Begriffe durch Standardformulierungen ersetzen:
+    - "Läuteweg" → "Schwingungskorridor (Trommelspielraum)"
+     
+4.**Wenn Sie dem Benutzer eine Reparatur empfehlen, müssen Sie**:
+    1. Ausdrücklich auf autorisierte Wertgarantie-Werkstätten verweisen
+    2. Folgendes Standardformat verwenden:
+    »Wir empfehlen die Überprüfung durch eine autorisierte Wertgarantie-Werkstatt. «
+    3. Keinen direkten Kontakt zum Kundenservice vorschlagen
+
+# Qualitätskontrolle
+5. **Jede Antwort muss vor Ausgabe folgende Prüfungen durchlaufen**:
+1. Terminologie-Check (gegen Wertgarantie-Glossar)
+2. Grammatik-Check (nach Duden-Regeln)
+3. Service-Check (enthält Lösungsvorschlag + Handlungsoption)
+"""}] + verlauf + [{"role": "user", "content": benutzereingabe}]
+
+        antwort = frage_openrouter(nachrichten)
+        st.session_state.chat_history.append((benutzereingabe, antwort))
+        chat_bubble(antwort, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
+
+
+if not st.session_state.get('chat_history', []):
+    st.markdown("""---
+**Wählen Sie eine Kategorie:**
+""")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("Versicherung", key="btn1"):
+            # Zustand umschalten statt festes Setzen
+            st.session_state['show_versicherung'] = not st.session_state.get('show_versicherung', False)
+            st.session_state['show_werkstaetten'] = False
+            st.session_state['show_haendler'] = False
+            st.session_state['show_erstehilfe'] = False
+            
+    with col2:
+        if st.button("Werkstätten", key="btn2"):
+            st.session_state['show_versicherung'] = False
+            st.session_state['show_werkstaetten'] = not st.session_state.get('show_werkstaetten', False)
+            st.session_state['show_haendler'] = False
+            st.session_state['show_erstehilfe'] = False
+            
+    with col3:
+        if st.button("Fachhändler", key="btn3"):
+            st.session_state['show_versicherung'] = False
+            st.session_state['show_werkstaetten'] = False
+            st.session_state['show_haendler'] = not st.session_state.get('show_haendler', False)
+            st.session_state['show_erstehilfe'] = False
+            
+    with col4:
+        if st.button("Erste Hilfe", key="btn4"):
+            st.session_state['show_versicherung'] = False
+            st.session_state['show_werkstaetten'] = False
+            st.session_state['show_haendler'] = False
+            st.session_state['show_erstehilfe'] = not st.session_state.get('show_erstehilfe', False)
+
+    # Versicherungs-Untermenü
+    if st.session_state.get('show_versicherung', False):
+        st.markdown("**Wählen Sie die Geräteversicherung aus:**")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("📱 Smartphone-Versicherung", key="sub1"):
+                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung/smartphone#/buchung/1", "show_link_smartphone")
+            if st.button("💻 Notebook-Versicherung", key="sub2"):
+                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung#/notebook", "show_link_notebook")
+        with col_b:
+            if st.button("📷 Kamera-Versicherung", key="sub3"):
+                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung/kamera#/", "show_link_kamera")
+            if st.button("📺 Fernseher-Versicherung", key="sub4"):
+                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung#/fernseher", "show_link_tv")
+
+    # Werkstätten-Link
+    if st.session_state.get('show_werkstaetten', False):
+        link_mit_chat_und_link("", "https://www.wertgarantie.de/werkstattsuche", "show_link_werkstatt")
+    
+    # Fachhändler-Link
+    if st.session_state.get('show_haendler', False):
+        link_mit_chat_und_link("", "https://www.wertgarantie.de/haendlersuche", "show_link_haendler")
+
+    # Erste-Hilfe-Untermenü
+    if st.session_state.get('show_erstehilfe', False):
+        st.markdown("**Wählen Sie die Erste Hilfe aus:**")
+        col_c, col_d = st.columns(2)
+        with col_c:
+            if st.button("📱 Handy Selbstreparatur", key="sub5"):
+                link_mit_chat_und_link("","https://www.wertgarantie.de/ratgeber/elektronik/smartphone/selbst-reparieren","show_link_ersteHilfe")
+            if st.button(" Haushalt Selbstreparatur", key="sub6"):
+                link_mit_chat_und_link("","https://www.wertgarantie.de/ratgeber/elektronik/haushalt-garten/selbst-reparieren","show_link_haushaltSelbstreparatur")
+
+                    
+#col4 = st.columns(1)[0]
+#col4, col5 = st.columns(2)
+#with col4:
+    #if st.button("FAQ", key="btn1"):
+        #link_mit_chat_und_link("", "https://www.wertgarantie.de/service/haeufige-fragen?question=116241&title=was-passiert-wenn-ein-schaden-eintritt", "show_link_FAQ")
+#with col5:
+    #if st.button("Handy Erste Hilfe", key="btn2"):
+        #link_mit_chat_und_link("", "https://www.wertgarantie.de/ratgeber/elektronik/smartphone/selbst-reparieren", "show_link_handy_erste_hilfe")
