@@ -61,8 +61,6 @@ if st.button("🗑️ Verlauf löschen"):
     st.session_state.chat_history = []
     st.rerun()
 
-...
-
 # Session-Initialisierung
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -171,44 +169,41 @@ if user_input:
             if st.button("🔄 Neue Berechnung starten"):
                 del st.session_state.frage_schritt
                 st.rerun()
-...
 
+    elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
+        welcome_reply = (
+            "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
+            "Sie können z. B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+        )
+        st.chat_message("assistant").write(welcome_reply)
+        st.session_state.chat_history.append((user_input, welcome_reply))
 
     else:
-        # Begrüßung oder Chatantwort
-        if user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
-            welcome_reply = (
-                "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-                "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
-            )
-            st.chat_message("assistant").write(welcome_reply)
-            st.session_state.chat_history.append((user_input, welcome_reply))
-        else:
-            context = get_relevant_chunks(user_input)
-            context_text = "\n".join([c[0] for c in context])
+        context = get_relevant_chunks(user_input)
+        context_text = "\n".join([c[0] for c in context])
 
-            conversation_history = []
-            for prev_user, prev_bot in st.session_state.chat_history[-6:]:
-                conversation_history.append({"role": "user", "content": prev_user})
-                conversation_history.append({"role": "assistant", "content": prev_bot})
+        conversation_history = []
+        for prev_user, prev_bot in st.session_state.chat_history[-6:]:
+            conversation_history.append({"role": "user", "content": prev_user})
+            conversation_history.append({"role": "assistant", "content": prev_bot})
 
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "Du bist ein kompetenter deutscher Kundenservice-Chatbot für ein Versicherungsunternehmen. "
-                        "Antworten bitte stets auf Deutsch, höflich und verständlich. Halte dich an technische und rechtliche Fakten, "
-                        "aber sprich den Nutzer ruhig menschlich und freundlich an."
-                    )
-                }
-            ] + conversation_history + [
-                {"role": "user", "content": f"Relevante Inhalte:\n{context_text}\n\nFrage: {user_input}"}
-            ]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Du bist ein kompetenter deutscher Kundenservice-Chatbot für ein Versicherungsunternehmen. "
+                    "Antworten bitte stets auf Deutsch, höflich und verständlich. Halte dich an technische und rechtliche Fakten, "
+                    "aber sprich den Nutzer ruhig menschlich und freundlich an."
+                )
+            }
+        ] + conversation_history + [
+            {"role": "user", "content": f"Relevante Inhalte:\n{context_text}\n\nFrage: {user_input}"}
+        ]
 
-            response = client.chat.completions.create(
-                model="mistralai/mistral-7b-instruct:free",
-                messages=messages
-            )
-            answer = response.choices[0].message.content
-            st.chat_message("assistant").write(answer)
-            st.session_state.chat_history.append((user_input, answer))
+        response = client.chat.completions.create(
+            model="mistralai/mistral-7b-instruct:free",
+            messages=messages
+        )
+        answer = response.choices[0].message.content
+        st.chat_message("assistant").write(answer)
+        st.session_state.chat_history.append((user_input, answer))
