@@ -91,70 +91,6 @@ for user_msg, bot_msg in st.session_state.chat_history:
     st.chat_message("assistant").write(bot_msg)
 
 
-if st.session_state.frage_schritt > 0:
-    st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
-
-    with st.form(key="formular1"):
-        if st.session_state.frage_schritt == 1:
-            alter = st.text_input("1️⃣ Wie alt sind Sie?", key="alter_input")
-            submitted = st.form_submit_button("Weiter ➔")
-            if submitted and alter.isdigit() and 16 <= int(alter) <= 100:
-                st.session_state.alter = int(alter)
-                st.session_state.frage_schritt = 2
-                st.rerun()
-            elif submitted:
-                st.warning("Bitte geben Sie ein Alter zwischen 16 und 100 ein.")
-
-        elif st.session_state.frage_schritt == 2:
-            wert = st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)", key="wert_input")
-            submitted = st.form_submit_button("Weiter ➔")
-            if submitted and wert.isdigit() and 50 <= int(wert) <= 2000:
-                st.session_state.geraetewert = int(wert)
-                st.session_state.frage_schritt = 3
-                st.rerun()
-            elif submitted:
-                st.warning("Bitte geben Sie einen Wert zwischen 50 und 2000 ein.")
-
-        elif st.session_state.frage_schritt == 3:
-            marke = st.text_input("3️⃣ Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)", key="marke_input")
-            submitted = st.form_submit_button("Weiter ➔")
-            if submitted and marke.capitalize() in ["Apple", "Samsung", "Andere"]:
-                st.session_state.marke = marke.capitalize()
-                st.session_state.frage_schritt = 4
-                st.rerun()
-            elif submitted:
-                st.warning("Bitte geben Sie Apple, Samsung oder Andere ein.")
-
-        elif st.session_state.frage_schritt == 4:
-            schaden = st.text_input("4️⃣ Gab es im letzten Jahr einen Schaden? (Ja/Nein)", key="schaden_input")
-            submitted = st.form_submit_button("📊 Tarif berechnen")
-            if submitted and schaden.capitalize() in ["Ja", "Nein"]:
-                st.session_state.schadenhistorie = schaden.capitalize()
-                st.session_state.frage_schritt = 5
-                st.rerun()
-            elif submitted:
-                st.warning("Bitte antworten Sie mit Ja oder Nein.")
-
-    if st.session_state.frage_schritt == 5:
-        daten = pd.DataFrame([{
-            'Alter': st.session_state.alter,
-            'Geraetewert': st.session_state.geraetewert,
-            'Schadenhistorie': 1 if st.session_state.schadenhistorie == 'Ja' else 0,
-            'Marke_Apple': 1 if st.session_state.marke == 'Apple' else 0,
-            'Marke_Samsung': 1 if st.session_state.marke == 'Samsung' else 0
-        }])
-
-        erwartete_schadenhoehe = glm_model.predict(daten)[0]
-        tarif_monatlich = (erwartete_schadenhoehe * 1.3) / 12
-
-        st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
-
-        if st.button("🔄 Neue Berechnung starten"):
-            for key in ["frage_schritt", "alter", "geraetewert", "marke", "schadenhistorie"]:
-                st.session_state.pop(key, None)
-            st.rerun()
-
-
 # Initialisiere Sub-Button-SessionStates
 link_keys = ["show_link_smartphone", 
              "show_link_notebook", 
@@ -234,6 +170,70 @@ if user_input:
         antwort = frage_openrouter(nachrichten)
         st.session_state.chat_history.append((user_input, antwort))
         chat_bubble(antwort, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
+
+
+if st.session_state.frage_schritt > 0:
+    st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
+
+    with st.form(key="formular1"):
+        if st.session_state.frage_schritt == 1:
+            alter = st.text_input("1️⃣ Wie alt sind Sie?", key="alter_input")
+            submitted = st.form_submit_button("Weiter ➔")
+            if submitted and alter.isdigit() and 16 <= int(alter) <= 100:
+                st.session_state.alter = int(alter)
+                st.session_state.frage_schritt = 2
+                st.rerun()
+            elif submitted:
+                st.warning("Bitte geben Sie ein Alter zwischen 16 und 100 ein.")
+
+        elif st.session_state.frage_schritt == 2:
+            wert = st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)", key="wert_input")
+            submitted = st.form_submit_button("Weiter ➔")
+            if submitted and wert.isdigit() and 50 <= int(wert) <= 2000:
+                st.session_state.geraetewert = int(wert)
+                st.session_state.frage_schritt = 3
+                st.rerun()
+            elif submitted:
+                st.warning("Bitte geben Sie einen Wert zwischen 50 und 2000 ein.")
+
+        elif st.session_state.frage_schritt == 3:
+            marke = st.text_input("3️⃣ Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)", key="marke_input")
+            submitted = st.form_submit_button("Weiter ➔")
+            if submitted and marke.capitalize() in ["Apple", "Samsung", "Andere"]:
+                st.session_state.marke = marke.capitalize()
+                st.session_state.frage_schritt = 4
+                st.rerun()
+            elif submitted:
+                st.warning("Bitte geben Sie Apple, Samsung oder Andere ein.")
+
+        elif st.session_state.frage_schritt == 4:
+            schaden = st.text_input("4️⃣ Gab es im letzten Jahr einen Schaden? (Ja/Nein)", key="schaden_input")
+            submitted = st.form_submit_button("📊 Tarif berechnen")
+            if submitted and schaden.capitalize() in ["Ja", "Nein"]:
+                st.session_state.schadenhistorie = schaden.capitalize()
+                st.session_state.frage_schritt = 5
+                st.rerun()
+            elif submitted:
+                st.warning("Bitte antworten Sie mit Ja oder Nein.")
+
+    if st.session_state.frage_schritt == 5:
+        daten = pd.DataFrame([{
+            'Alter': st.session_state.alter,
+            'Geraetewert': st.session_state.geraetewert,
+            'Schadenhistorie': 1 if st.session_state.schadenhistorie == 'Ja' else 0,
+            'Marke_Apple': 1 if st.session_state.marke == 'Apple' else 0,
+            'Marke_Samsung': 1 if st.session_state.marke == 'Samsung' else 0
+        }])
+
+        erwartete_schadenhoehe = glm_model.predict(daten)[0]
+        tarif_monatlich = (erwartete_schadenhoehe * 1.3) / 12
+
+        st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
+
+        if st.button("🔄 Neue Berechnung starten"):
+            for key in ["frage_schritt", "alter", "geraetewert", "marke", "schadenhistorie"]:
+                st.session_state.pop(key, None)
+            st.rerun()
 
 if not st.session_state.get('chat_history', []):
     st.markdown("""---
