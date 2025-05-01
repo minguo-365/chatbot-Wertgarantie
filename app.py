@@ -1,9 +1,11 @@
+# vollständiger Code mit Korrekturen integriert
+
 import streamlit as st
 import pandas as pd
 import os
 import faiss
 import numpy as np
-import statsmodels.formula.api as sm
+import statsmodels.formula.api as smf
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 import re
@@ -60,7 +62,7 @@ def train_glm_model():
     })
     df = pd.get_dummies(df, columns=['Marke'], drop_first=True)
     formula = 'Schadenhoehe ~ Alter + Geraetewert + Schadenhistorie + Marke_Apple + Marke_Samsung'
-    tweedie = sm.families.Tweedie(var_power=1.5, link=sm.families.links.log())
+    tweedie = smf.families.Tweedie(var_power=1.5, link=smf.families.links.log())
     glm_model = smf.glm(formula=formula, data=df, family=tweedie).fit()
     return glm_model
 
@@ -212,11 +214,15 @@ if st.session_state.frage_schritt > 0:
         st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
 
         if st.button("🔄 Neue Berechnung starten"):
-            for key in ["frage_schritt", "alter", "geraetewert", "marke", "schadenhistorie"]:
+            for key in [
+                "frage_schritt", "alter", "geraetewert", "marke", "schadenhistorie", "chat_history",
+                "show_link_smartphone", "show_link_notebook", "show_link_kamera", "show_link_tv",
+                "show_link_werkstatt", "show_link_haendler", "show_link_ersteHilfe", "show_link_haushaltSelbstreparatur"
+            ]:
                 st.session_state.pop(key, None)
             st.rerun()
 
-if not st.session_state.get('chat_history', []):
+if st.session_state.get("frage_schritt", 0) == 0 and not st.session_state.get("chat_history", []):
     st.markdown("""---
 **Wählen Sie eine Kategorie:**
 """)
@@ -224,26 +230,25 @@ if not st.session_state.get('chat_history', []):
 
     with col1:
         if st.button("Versicherung", key="btn1"):
-            # Zustand umschalten statt festes Setzen
             st.session_state['show_versicherung'] = not st.session_state.get('show_versicherung', False)
             st.session_state['show_werkstaetten'] = False
             st.session_state['show_haendler'] = False
             st.session_state['show_erstehilfe'] = False
-            
+
     with col2:
         if st.button("Werkstätten", key="btn2"):
             st.session_state['show_versicherung'] = False
             st.session_state['show_werkstaetten'] = not st.session_state.get('show_werkstaetten', False)
             st.session_state['show_haendler'] = False
             st.session_state['show_erstehilfe'] = False
-            
+
     with col3:
         if st.button("Fachhändler", key="btn3"):
             st.session_state['show_versicherung'] = False
             st.session_state['show_werkstaetten'] = False
             st.session_state['show_haendler'] = not st.session_state.get('show_haendler', False)
             st.session_state['show_erstehilfe'] = False
-            
+
     with col4:
         if st.button("Erste Hilfe", key="btn4"):
             st.session_state['show_versicherung'] = False
@@ -251,7 +256,6 @@ if not st.session_state.get('chat_history', []):
             st.session_state['show_haendler'] = False
             st.session_state['show_erstehilfe'] = not st.session_state.get('show_erstehilfe', False)
 
-    # Versicherungs-Untermenü
     if st.session_state.get('show_versicherung', False):
         st.markdown("**Wählen Sie die Geräteversicherung aus:**")
         col_a, col_b = st.columns(2)
@@ -262,19 +266,16 @@ if not st.session_state.get('chat_history', []):
                 link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung#/notebook", "show_link_notebook")
         with col_b:
             if st.button("📷 Kamera-Versicherung", key="sub3"):
-                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung/kamera#/", "show_link_kamera")
+                link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung/kamera#", "show_link_kamera")
             if st.button("📺 Fernseher-Versicherung", key="sub4"):
                 link_mit_chat_und_link("", "https://www.wertgarantie.de/versicherung#/fernseher", "show_link_tv")
 
-    # Werkstätten-Link
     if st.session_state.get('show_werkstaetten', False):
         link_mit_chat_und_link("", "https://www.wertgarantie.de/werkstattsuche", "show_link_werkstatt")
-    
-    # Fachhändler-Link
+
     if st.session_state.get('show_haendler', False):
         link_mit_chat_und_link("", "https://www.wertgarantie.de/haendlersuche", "show_link_haendler")
 
-    # Erste-Hilfe-Untermenü
     if st.session_state.get('show_erstehilfe', False):
         st.markdown("**Wählen Sie die Erste Hilfe aus:**")
         col_c, col_d = st.columns(2)
