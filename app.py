@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import faiss
 import numpy as np
-import statsmodels.formula.api as smf
+import statsmodels.api as sm
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 import re
@@ -62,7 +62,7 @@ def train_glm_model():
     })
     df = pd.get_dummies(df, columns=['Marke'], drop_first=True)
     formula = 'Schadenhoehe ~ Alter + Geraetewert + Schadenhistorie + Marke_Apple + Marke_Samsung'
-    tweedie = smf.families.Tweedie(var_power=1.5, link=smf.families.links.log())
+    tweedie = sm.families.Tweedie(var_power=1.5, link=sm.families.links.log())
     glm_model = smf.glm(formula=formula, data=df, family=tweedie).fit()
     return glm_model
 
