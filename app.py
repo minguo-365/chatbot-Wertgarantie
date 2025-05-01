@@ -78,18 +78,6 @@ if st.button("🗑️ Verlauf löschen"):
     st.session_state.clear()
     st.rerun()
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "frage_schritt" not in st.session_state:
-    st.session_state.frage_schritt = 0
-
-for user_msg, bot_msg in st.session_state.chat_history:
-    st.chat_message("user").write(user_msg)
-    st.chat_message("assistant").write(bot_msg)
-
 
 # Initialisiere Sub-Button-SessionStates
 link_keys = ["show_link_smartphone", 
