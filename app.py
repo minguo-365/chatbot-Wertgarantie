@@ -90,50 +90,6 @@ for user_msg, bot_msg in st.session_state.chat_history:
     st.chat_message("user").write(user_msg)
     st.chat_message("assistant").write(bot_msg)
 
-user_input = st.chat_input("Ihre Frage eingeben")
-
-if user_input:
-    st.chat_message("user").write(user_input)
-
-    if user_input.strip().lower() == "handyversicherung":
-        st.session_state.frage_schritt += 1
-
-    elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
-        welcome_reply = (
-            "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-            "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
-        )
-        st.chat_message("assistant").write(welcome_reply)
-        st.session_state.chat_history.append((user_input, welcome_reply))
-
-    else:
-        context = get_relevant_chunks(user_input)
-        context_text = "\n".join([c[0] for c in context])
-        conversation_history = []
-        for prev_user, prev_bot in st.session_state.chat_history[-6:]:
-            conversation_history.append({"role": "user", "content": prev_user})
-            conversation_history.append({"role": "assistant", "content": prev_bot})
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "Du bist ein kompetenter deutscher Kundenservice-Chatbot für ein Versicherungsunternehmen. "
-                    "Antworten bitte stets auf Deutsch, höflich und verständlich. Halte dich an technische und rechtliche Fakten, "
-                    "aber sprich den Nutzer ruhig menschlich und freundlich an."
-                )
-            }
-        ] + conversation_history + [
-            {"role": "user", "content": f"Relevante Inhalte:\n{context_text}\n\nFrage: {user_input}"}
-        ]
-
-        response = client.chat.completions.create(
-            model="mistralai/mistral-7b-instruct:free",
-            messages=messages
-        )
-        answer = response.choices[0].message.content
-        st.chat_message("assistant").write(answer)
-        st.session_state.chat_history.append((user_input, answer))
 
 if st.session_state.frage_schritt > 0:
     st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
@@ -243,14 +199,17 @@ for nutzer, bot in st.session_state.chat_history:
     chat_bubble(nutzer, align="right", bgcolor="#DCF8C6", avatar_url=USER_AVATAR)
     chat_bubble(bot, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
 
-benutzereingabe = st.chat_input("Ihre Frage eingeben:")
-if benutzereingabe:
-    chat_bubble(benutzereingabe, align="right", bgcolor="#DCF8C6", avatar_url=USER_AVATAR)
-    eingabe = benutzereingabe.strip().lower()
+user_input = st.chat_input("Ihre Frage eingeben:")
+if user_input:
+    st.chat_message("user").write(user_input)
+    eingabe = user_input.strip().lower()
 
-    if eingabe in ["hallo", "hi", "guten tag", "hey"]:
+    if eingabe == "handyversicherung":
+        st.session_state.frage_schritt += 1
+
+    elif eingabe in ["hallo", "hi", "guten tag", "hey"]:
         willkommen = "Hallo und willkommen bei Wertgarantie! Was kann ich für Sie tun?"
-        st.session_state.chat_history.append((benutzereingabe, willkommen))
+        st.session_state.chat_history.append((user_input, willkommen))
         chat_bubble(willkommen, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
 
     else:
@@ -259,56 +218,22 @@ if benutzereingabe:
             if frage: verlauf.append({"role": "user", "content": frage})
             verlauf.append({"role": "assistant", "content": antwort})
 
+        context = get_relevante_abschnitte(user_input)
+        context_text = "\n".join([c[0] for c in context])
+
         nachrichten = [
-            {"role": "system", "content": 
-                """
-# Kernidentität
-Sie sind "Emma" - der sympathische Digitalassistent von Wertgarantie mit:
-- 10 Jahren Erfahrung in Versicherungen
-- Fachliche Expertise + herzliche Art
-- Natürliche, aber professionelle Sprache
-
-
-# Antwortregeln (ALLES durchgehend anwenden)
-1. **Sprachliche Präzision**:
-   - Grammatik/Rechtschreibung: Immer fehlerfreies Hochdeutsch
-   - Satzbau: Klare Haupt-Nebensatz-Struktur (max. 15 Wörter/Satz)
-   - Terminologie: Nutzen Sie nur den offiziellen Geräte-Wortschatz von Wertgarantie
-     - Beispiel: "Flusensieb (nicht 'Siebteil')", "Trommellager (nicht 'Drehmechanismus')"
-
-2. **Service-Tonality**:
-   - 3-Stufen-Interaktion:
-     1. Empathie: "Ich verstehe, dass das frustrierend sein muss..."
-     2. Lösung: "Konkret empfehle ich drei Schritte:"
-     3. Aktion: "Kann ich für Sie... veranlassen?"
-   - Absolut vermeiden: 
-     ❌ Umgangssprache ("Hey", "nö")  
-     ❌ Unsichere Formulierungen ("glaube", "vielleicht")
-3.**Strikte Output-Regeln**:
-     1. Niemals Platzhalter wie ___ oder [...] verwenden
-     2. Bei technischen Begriffen immer vollständige Form:
-     - ❌ "Integriertheit von ___"
-     - ✅ "Integrität der Waschmaschinenaufhängung"
-     3. Unklare Begriffe durch Standardformulierungen ersetzen:
-    - "Läuteweg" → "Schwingungskorridor (Trommelspielraum)"
-     
-4.**Wenn Sie dem Benutzer eine Reparatur empfehlen, müssen Sie**:
-    1. Ausdrücklich auf autorisierte Wertgarantie-Werkstätten verweisen
-    2. Folgendes Standardformat verwenden:
-    »Wir empfehlen die Überprüfung durch eine autorisierte Wertgarantie-Werkstatt. «
-    3. Keinen direkten Kontakt zum Kundenservice vorschlagen
-
-# Qualitätskontrolle
-5. **Jede Antwort muss vor Ausgabe folgende Prüfungen durchlaufen**:
-1. Terminologie-Check (gegen Wertgarantie-Glossar)
-2. Grammatik-Check (nach Duden-Regeln)
-3. Service-Check (enthält Lösungsvorschlag + Handlungsoption)
-"""}] + verlauf + [{"role": "user", "content": benutzereingabe}]
+            {"role": "system", "content": (
+                "Du bist ein kompetenter deutscher Kundenservice-Chatbot für ein Versicherungsunternehmen. "
+                "Antworten bitte stets auf Deutsch, höflich und verständlich. Halte dich an technische und rechtliche Fakten, "
+                "aber sprich den Nutzer ruhig menschlich und freundlich an."
+            )}
+        ] + verlauf + [
+            {"role": "user", "content": f"Relevante Inhalte:\n{context_text}\n\nFrage: {user_input}"}
+        ]
 
         antwort = frage_openrouter(nachrichten)
-        st.session_state.chat_history.append((benutzereingabe, antwort))
+        st.session_state.chat_history.append((user_input, antwort))
         chat_bubble(antwort, align="left", bgcolor="#F1F0F0", avatar_url=BOT_AVATAR)
-
 
 if not st.session_state.get('chat_history', []):
     st.markdown("""---
