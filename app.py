@@ -54,7 +54,7 @@ glm_model = train_glm_model()
 # ---------------------------
 # 3. Benutzeroberfläche & Chat-Logik
 # ---------------------------
-st.title("🤖 Wertgarantie Chatbot")
+st.title("🧑‍💻 Wertgarantie Chatbot")
 
 # Verlauf löschen
 if st.button("🗑️ Verlauf löschen"):
@@ -76,70 +76,69 @@ user_input = st.chat_input("Stellen Sie Ihre Frage oder geben Sie 'Handyversiche
 if user_input:
     st.chat_message("user").write(user_input)
 
-  if user_input.strip().lower() == "handyversicherung":
-    st.subheader("📱 Tarifrechner – Schritt für Schritt")
+    if user_input.strip().lower() == "handyversicherung":
+        st.subheader("📋 Bitte beantworten Sie folgende Fragen:")
 
-    if "frage_schritt" not in st.session_state:
-        st.session_state.frage_schritt = 1
+        if "frage_schritt" not in st.session_state:
+            st.session_state.frage_schritt = 1
 
-    # Schritt 1: Alter
-    if st.session_state.frage_schritt == 1:
-        alter = st.number_input("Wie alt sind Sie?", min_value=16, max_value=100, key="alter_input")
-        if st.button("Weiter", key="weiter1"):
-            st.session_state.frage_schritt = 2
-            st.session_state.alter = alter
-            st.rerun()
+        # Schritt 1: Alter
+        if st.session_state.frage_schritt == 1:
+            alter = st.number_input("1️⃣ Wie alt sind Sie?", min_value=16, max_value=100, key="alter_input")
+            if st.button("Weiter ➔", key="weiter1"):
+                st.session_state.alter = alter
+                st.session_state.frage_schritt = 2
+                st.rerun()
 
-    # Schritt 2: Gerätewert
-    elif st.session_state.frage_schritt == 2:
-        geraetewert = st.number_input("Wie viel kostet Ihr Handy? (€)", min_value=50, max_value=2000, key="wert_input")
-        if st.button("Weiter", key="weiter2"):
-            st.session_state.frage_schritt = 3
-            st.session_state.geraetewert = geraetewert
-            st.rerun()
+        # Schritt 2: Gerätewert
+        elif st.session_state.frage_schritt == 2:
+            geraetewert = st.number_input("2️⃣ Wie viel kostet Ihr Handy? (€)", min_value=50, max_value=2000, key="wert_input")
+            if st.button("Weiter ➔", key="weiter2"):
+                st.session_state.geraetewert = geraetewert
+                st.session_state.frage_schritt = 3
+                st.rerun()
 
-    # Schritt 3: Marke
-    elif st.session_state.frage_schritt == 3:
-        marke = st.selectbox("Welche Marke ist Ihr Handy?", ['Apple', 'Samsung', 'Andere'], key="marke_input")
-        if st.button("Weiter", key="weiter3"):
-            st.session_state.frage_schritt = 4
-            st.session_state.marke = marke
-            st.rerun()
+        # Schritt 3: Marke
+        elif st.session_state.frage_schritt == 3:
+            marke = st.selectbox("3️⃣ Welche Marke ist Ihr Handy?", ['Apple', 'Samsung', 'Andere'], key="marke_input")
+            if st.button("Weiter ➔", key="weiter3"):
+                st.session_state.marke = marke
+                st.session_state.frage_schritt = 4
+                st.rerun()
 
-    # Schritt 4: Schadenhistorie
-    elif st.session_state.frage_schritt == 4:
-        schadenhistorie = st.radio("Gab es im letzten Jahr einen Schaden?", ['Nein', 'Ja'], key="schaden_input")
-        if st.button("Tarif berechnen", key="weiter4"):
-            st.session_state.schadenhistorie = schadenhistorie
-            st.session_state.frage_schritt = 5
-            st.rerun()
+        # Schritt 4: Schadenhistorie
+        elif st.session_state.frage_schritt == 4:
+            schadenhistorie = st.radio("4️⃣ Gab es im letzten Jahr einen Schaden?", ['Nein', 'Ja'], key="schaden_input")
+            if st.button("📊 Tarif berechnen", key="weiter4"):
+                st.session_state.schadenhistorie = schadenhistorie
+                st.session_state.frage_schritt = 5
+                st.rerun()
 
-    # Schritt 5: Ergebnis berechnen
-    elif st.session_state.frage_schritt == 5:
-        daten = pd.DataFrame([{
-            'Alter': st.session_state.alter,
-            'Geraetewert': st.session_state.geraetewert,
-            'Schadenhistorie': 1 if st.session_state.schadenhistorie == 'Ja' else 0,
-            'Marke_Apple': 1 if st.session_state.marke == 'Apple' else 0,
-            'Marke_Samsung': 1 if st.session_state.marke == 'Samsung' else 0
-        }])
+        # Schritt 5: Ergebnis anzeigen
+        elif st.session_state.frage_schritt == 5:
+            daten = pd.DataFrame([{
+                'Alter': st.session_state.alter,
+                'Geraetewert': st.session_state.geraetewert,
+                'Schadenhistorie': 1 if st.session_state.schadenhistorie == 'Ja' else 0,
+                'Marke_Apple': 1 if st.session_state.marke == 'Apple' else 0,
+                'Marke_Samsung': 1 if st.session_state.marke == 'Samsung' else 0
+            }])
 
-        erwartete_schadenhoehe = glm_model.predict(daten)[0]
-        tarif_monatlich = (erwartete_schadenhoehe * 1.3) / 12
+            erwartete_schadenhoehe = glm_model.predict(daten)[0]
+            tarif_monatlich = (erwartete_schadenhoehe * 1.3) / 12
 
-        st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
+            st.success(f"✅ Ihre geschätzte monatliche Prämie beträgt: **{tarif_monatlich:.2f} €**")
 
-        if st.button("Neu starten 🔁"):
-            del st.session_state.frage_schritt
-            st.rerun()
-
+            if st.button("🔄 Neue Berechnung starten"):
+                del st.session_state.frage_schritt
+                st.rerun()
 
     else:
-        # Begrüßung?
+        # Begrüßung oder Chatantwort
         if user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
             welcome_reply = (
                 "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-                "Sie können z. B. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+                "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
             )
             st.chat_message("assistant").write(welcome_reply)
             st.session_state.chat_history.append((user_input, welcome_reply))
