@@ -80,7 +80,7 @@ if user_input:
     elif user_input.lower().strip() in ["hallo", "hi", "guten tag", "hey"]:
         welcome_reply = (
             "Hallo und herzlich willkommen bei Wertgarantie! Wie kann ich Ihnen helfen? "
-            "Sie können z.\u200bB. 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
+            "Sie können 'Handyversicherung' eingeben oder eine Frage zu unseren Leistungen stellen."
         )
         st.chat_message("assistant").write(welcome_reply)
         st.session_state.chat_history.append((user_input, welcome_reply))
@@ -116,10 +116,10 @@ if user_input:
 
 if st.session_state.frage_schritt > 0:
     if st.session_state.frage_schritt == 1:
-        st.subheader("\ud83d\udccb Bitte beantworten Sie folgende Fragen:")
+        st.subheader(" 📋Bitte beantworten Sie folgende Fragen:")
 
     if st.session_state.frage_schritt == 1:
-        alter = st.text_input("1\ufe0f\ufe0f Wie alt sind Sie?")
+        alter = st.text_input("1️⃣ Wie alt sind Sie?")
         if alter.isdigit() and 16 <= int(alter) <= 100:
             st.session_state.alter = int(alter)
             if st.button("Weiter \u2794", key="weiter1"):
@@ -129,7 +129,7 @@ if st.session_state.frage_schritt > 0:
             st.warning("Bitte geben Sie ein Alter zwischen 16 und 100 ein.")
 
     elif st.session_state.frage_schritt == 2:
-        wert = st.text_input("2\ufe0f\ufe0f Wie viel kostet Ihr Handy? (€)")
+        wert = st.text_input("2️⃣ Wie viel kostet Ihr Handy? (€)")
         if wert.isdigit() and 50 <= int(wert) <= 2000:
             st.session_state.geraetewert = int(wert)
             if st.button("Weiter \u2794", key="weiter2"):
@@ -139,7 +139,7 @@ if st.session_state.frage_schritt > 0:
             st.warning("Bitte geben Sie einen Wert zwischen 50 und 2000 ein.")
 
     elif st.session_state.frage_schritt == 3:
-        marke = st.text_input("3\ufe0f\ufe0f Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)")
+        marke = st.text_input("3️⃣ Welche Marke ist Ihr Handy? (Apple, Samsung, Andere)")
         if marke.capitalize() in ["Apple", "Samsung", "Andere"]:
             st.session_state.marke = marke.capitalize()
             if st.button("Weiter \u2794", key="weiter3"):
@@ -149,7 +149,7 @@ if st.session_state.frage_schritt > 0:
             st.warning("Bitte geben Sie Apple, Samsung oder Andere ein.")
 
     elif st.session_state.frage_schritt == 4:
-        schaden = st.text_input("4\ufe0f\ufe0f Gab es im letzten Jahr einen Schaden? (Ja/Nein)")
+        schaden = st.text_input("4️⃣  Gab es im letzten Jahr einen Schaden? (Ja/Nein)")
         if schaden.capitalize() in ["Ja", "Nein"]:
             st.session_state.schadenhistorie = schaden.capitalize()
             if st.button("\ud83d\udcca Tarif berechnen"):
