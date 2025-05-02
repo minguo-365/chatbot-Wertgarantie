@@ -23,6 +23,11 @@ def init_vector_store():
 
 model, chunks, index, _ = init_vector_store()
 
+def get_relevante_abschnitte(anfrage, k=3):
+    anfrage_vektor = model.encode([anfrage])
+    D, I = index.search(np.array(anfrage_vektor), k)
+    return [(chunks[i], i) for i in I[0]]
+
 @st.cache_data
 def train_glm_model():
     df = pd.DataFrame({
