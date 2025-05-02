@@ -28,6 +28,26 @@ def get_relevante_abschnitte(anfrage, k=3):
     D, I = index.search(np.array(anfrage_vektor), k)
     return [(chunks[i], i) for i in I[0]]
 
+def frage_openrouter(nachrichten):
+    try:
+        response = client.chat.completions.create(
+            model="mistralai/mistral-7b-instruct",
+            messages=nachrichten
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        if "code': 402" in str(e).lower() or "insuffizien" in str(e).lower():
+            try:
+                response = client.chat.completions.create(
+                    model="mistralai/mistral-7b-instruct:free",
+                    messages=nachrichten
+                )
+                return response.choices[0].message.content
+            except Exception as e2:
+                return f"\u274c Auch das kostenlose Modell schlug fehl: {e2}"
+        else:
+            return f"\u274c OpenRouter Fehler: {e}"
+
 @st.cache_data
 def train_glm_model():
     df = pd.DataFrame({
