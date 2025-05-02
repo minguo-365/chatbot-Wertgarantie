@@ -1,15 +1,12 @@
-# vollständiger Code mit Korrekturen integriert
-
 import streamlit as st
 import pandas as pd
 import os
 import faiss
 import numpy as np
-import statsmodels.formula.api as sm
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
-import re
-import requests
 
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
@@ -25,31 +22,6 @@ def init_vector_store():
     return model, chunks, index, embeddings
 
 model, chunks, index, _ = init_vector_store()
-
-def get_relevante_abschnitte(anfrage, k=3):
-    anfrage_vektor = model.encode([anfrage])
-    D, I = index.search(np.array(anfrage_vektor), k)
-    return [(chunks[i], i) for i in I[0]]
-
-def frage_openrouter(nachrichten):
-    try:
-        response = client.chat.completions.create(
-            model="mistralai/mistral-7b-instruct",
-            messages=nachrichten
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        if "code': 402" in str(e).lower() or "insuffizien" in str(e).lower():
-            try:
-                response = client.chat.completions.create(
-                    model="mistralai/mistral-7b-instruct:free",
-                    messages=nachrichten
-                )
-                return response.choices[0].message.content
-            except Exception as e2:
-                return f"\u274c Auch das kostenlose Modell schlug fehl: {e2}"
-        else:
-            return f"\u274c OpenRouter Fehler: {e}"
 
 @st.cache_data
 def train_glm_model():
