@@ -137,28 +137,69 @@ if user_input:
 st.markdown("""---
 **Wählen Sie eine Kategorie:**
 """)
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("📱 Smartphone-Versicherung"):
-        st.markdown("[🔍 Smartphone buchen](https://www.wertgarantie.de/versicherung/smartphone#/buchung/1)")
-    if st.button("💻 Notebook-Versicherung"):
-        st.markdown("[🔍 Notebook buchen](https://www.wertgarantie.de/versicherung#/notebook)")
-with col2:
-    if st.button("📷 Kamera-Versicherung"):
-        st.markdown("[🔍 Kamera buchen](https://www.wertgarantie.de/versicherung/kamera#)")
-    if st.button("📺 Fernseher-Versicherung"):
-        st.markdown("[🔍 Fernseher buchen](https://www.wertgarantie.de/versicherung#/fernseher)")
 
-if st.button("🔧 Werkstätten finden"):
-    st.markdown("[🔍 Werkstattsuche](https://www.wertgarantie.de/werkstattsuche)")
+# Reset helper
+if st.button("🔄 Zurück zum Hauptmenü"):
+    for key in ["show_versicherung", "show_erstehilfe"]:
+        st.session_state[key] = False
+    st.rerun()
 
-if st.button("🏪 Fachhändler finden"):
-    st.markdown("[🔍 Händlersuche](https://www.wertgarantie.de/haendlersuche)")
+# Initial state
+if "show_versicherung" not in st.session_state:
+    st.session_state.show_versicherung = False
+if "show_erstehilfe" not in st.session_state:
+    st.session_state.show_erstehilfe = False
 
-if st.button("🆘 Erste Hilfe: Handy"):
-    st.markdown("[📱 Selbstreparatur Handy](https://www.wertgarantie.de/ratgeber/elektronik/smartphone/selbst-reparieren)")
+# Main buttons
+if not (st.session_state.show_versicherung or st.session_state.show_erstehilfe):
+    col1, col2, col3, col4 = st.columns(4)
 
-if st.button("🛠️ Erste Hilfe: Haushalt"):
-    st.markdown("[🏡 Selbstreparatur Haushalt](https://www.wertgarantie.de/ratgeber/elektronik/haushalt-garten/selbst-reparieren)")
+    with col1:
+        if st.button("🛡️ Versicherung"):
+            st.session_state.show_versicherung = True
+            st.session_state.show_erstehilfe = False
+            st.rerun()
+
+    with col2:
+        if st.button("🔧 Werkstätten"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/werkstattsuche">', unsafe_allow_html=True)
+
+    with col3:
+        if st.button("🏪 Fachhändler"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/haendlersuche">', unsafe_allow_html=True)
+
+    with col4:
+        if st.button("🆘 Erste Hilfe"):
+            st.session_state.show_erstehilfe = True
+            st.session_state.show_versicherung = False
+            st.rerun()
+
+# Sub-buttons for Versicherung
+if st.session_state.show_versicherung:
+    st.subheader("🛡️ Wählen Sie eine Versicherung:")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📱 Smartphone-Versicherung"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/versicherung/smartphone#/buchung/1">', unsafe_allow_html=True)
+
+        if st.button("💻 Notebook-Versicherung"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/versicherung#/notebook">', unsafe_allow_html=True)
+
+    with col2:
+        if st.button("📷 Kamera-Versicherung"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/versicherung/kamera#">', unsafe_allow_html=True)
+
+# Sub-buttons for Erste Hilfe
+if st.session_state.show_erstehilfe:
+    st.subheader("🆘 Selbstreparatur auswählen:")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📱 Selbstreparatur Handy"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/ratgeber/elektronik/smartphone/selbst-reparieren">', unsafe_allow_html=True)
+
+    with col2:
+        if st.button("🏠 Selbstreparatur Haushalt"):
+            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/ratgeber/elektronik/haushalt-garten/selbst-reparieren">', unsafe_allow_html=True)
+
 
 
