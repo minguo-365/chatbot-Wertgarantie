@@ -166,7 +166,8 @@ if not (st.session_state.show_versicherung or st.session_state.show_erstehilfe):
 
     with col3:
         if st.button("🏪 Fachhändler"):
-            st.markdown('<meta http-equiv="refresh" content="0; url=https://www.wertgarantie.de/haendlersuche">', unsafe_allow_html=True)
+            js = "window.open('https://www.wertgarantie.de/haendlersuche', '_blank').focus();"
+            st.components.v1.html(f"<script>{js}</script>", height=0)
 
     with col4:
         if st.button("🆘 Erste Hilfe"):
